@@ -19,7 +19,8 @@ AICore = Preporcessor([filter_exclam, filter_bad_signs, filter_roman, filter_bad
 
 button = html.Div(
     [
-        dbc.Button("Click me", id="button", className="mr-1", size='lg'),
+        dbc.Button("Try", id="button", className="mr-1", size='lg'),
+        dbc.Button("Upload CSV", id="csv_button", className="mr-1", size='lg', color="secondary"),
     ]
 )
 
@@ -33,10 +34,7 @@ alert = dbc.Alert(
 input_form = html.Div(
     [
         dbc.Input(type="text", id="input_address", placeholder="Введите адрес"),
-        dbc.FormText(
-            "Исправь адрес и найди свой путь",
-            color="secondary",
-        ),
+        dbc.FormText("Исправь адрес и найди свой путь", color="secondary",),
     ]
 )
 
@@ -68,7 +66,8 @@ app.layout = dbc.Container([
 )
 def toggle_alert_no_fade(n, text):
     if n:
-        return str(AICore.preprocess([text])[0])
+        if text:
+            return str(AICore.preprocess([text])[0])
     else:
         return ''
 
