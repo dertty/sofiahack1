@@ -5,13 +5,23 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from preprossor import Preporcessor, filter_exclam, filter_bad_signs, filter_roman, filter_bad_signs, filter_abb, filter_stations
+import pandas as pd
+import base64
+import datetime
+import io
+import dash_table
+import os
 import re
 import numpy as np
+
+import flask
+from flask.helpers import send_file
+server = flask.Flask('app')
 
 PATH = pathlib.Path(__file__).parent
 DATA_PATH = PATH.joinpath("data").resolve()
 
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP], server=server)
 server = app.server
 app.config.suppress_callback_exceptions = True
 
@@ -19,8 +29,12 @@ AICore = Preporcessor([filter_exclam, filter_bad_signs, filter_roman, filter_bad
 
 buttons = html.Div(
     [
-        dbc.Button("Try", id="button", className="mr-1", size='lg'),
-        dcc.Upload(dbc.Button("Upload CSV", id="csv_button", className="mr-1", size='lg', color="secondary")),
+        dbc.Row(
+            [
+                dbc.Button("Try", id="button", className="mr-1", size='lg'),
+                dcc.Upload(
+                    children=dbc.Button("Upload CSV", id="csv_button", className="mr-1", size='lg', color="secondary"),
+                    id='upload-data', )]),
     ]
 )
 
@@ -45,6 +59,7 @@ app.layout = dbc.Container([
                     dbc.Col(html.Div(buttons)),
                 ]),
             dbc.Row([dbc.Col(card)]),
+            dbc.Row(html.Div(id='output-data-upload')),
         ]), justify="center", align="center", className="h-50")
 ], style={"height": "100vh"})
 
@@ -59,6 +74,48 @@ def toggle_alert_no_fade(n, text):
             return str(AICore.preprocess([text])[0])
     else:
         return ''
+
+
+@app.callback(Output('output-data-upload', 'children'),
+              [Input('upload-data', 'contents')],
+              [State('upload-data', 'filename'),
+               State('upload-data', 'last_modified')])
+def update_output(content, name, date):
+    if content is not None:
+        children = [parse_contents(content, name, date)]
+        return children
+
+
+def parse_contents(contents, filename, date):
+    content_type, content_string = contents.split(',')
+
+    decoded = base64.b64decode(content_string)
+    try:
+        if 'csv' in filename:
+            df = pd.read_csv(io.StringIO(decoded.decode('utf-8')), sep=';')
+
+        if 'adr' not in df.columns or 'id' not in df.columns:
+            return html.Div(['There was an error processing this file. Check the column names: id, adr.'])
+        df['norm_adr'] = AICore.preprocess(df.adr)
+        df = df[['id', 'adr', 'norm_adr']]
+        df.to_csv('result{}{}.csv'.format(filename, date), sep=';')
+    except Exception as e:
+        print(e)
+        return html.Div(['There was an error processing this file.'])
+
+    return html.Div([
+        html.H5(filename),
+        html.H6(datetime.datetime.fromtimestamp(date)),
+
+        dash_table.DataTable(
+            data=df.to_dict('records'),
+            columns=[{'name': i, 'id': i} for i in df.columns]
+        ),
+        html.Hr(),
+        html.A(filename, href='result{}{}.csv'.format(filename, date))
+
+    ])
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
