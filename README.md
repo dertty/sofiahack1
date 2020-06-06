@@ -1,4 +1,4 @@
-# sofiahack1
+# sofia hack1
 Project SOFIA for leaders of digital
 ХАКАТОН #1 / Кейс №5
 Сбербанк
