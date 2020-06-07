@@ -5,7 +5,8 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from preprossor import Preporcessor, filter_exclam, filter_bad_signs, filter_roman, filter_bad_signs, filter_abb, filter_stations
-from classifier import NagibatorClassifier
+# from classifier import NagibatorClassifier
+# import transformers as ppb
 import pandas as pd
 import base64
 import datetime

@@ -1,9 +1,6 @@
 import numpy as np
-import pandas as pd
 import torch
-import transformers as ppb
 import joblib
-from sklearn.linear_model import LogisticRegression
 
 
 class NagibatorClassifier:
