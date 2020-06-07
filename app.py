@@ -5,14 +5,12 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 import dash_bootstrap_components as dbc
 from preprossor import Preporcessor, filter_exclam, filter_bad_signs, filter_roman, filter_bad_signs, filter_abb, filter_stations
+from classifier import NagibatorClassifier
 import pandas as pd
 import base64
 import datetime
 import io
 import dash_table
-import os
-import re
-import numpy as np
 
 import flask
 from flask.helpers import send_file
@@ -52,7 +50,7 @@ card = dbc.FormText(" ", color="secondary", id='output')
 app.layout = dbc.Container([
     dbc.Row(dbc.Col(
         [
-            dbc.Row([dbc.Col(html.Div(html.H1("Sofia Hack #1")))]),
+            dbc.Row([dbc.Col(html.Div(html.H1("Sophia Hack #1")))]),
             dbc.Row(
                 [
                     dbc.Col(html.Div(input_form)),
@@ -97,6 +95,11 @@ def parse_contents(contents, filename, date):
         if 'adr' not in df.columns or 'id' not in df.columns:
             return html.Div(['There was an error processing this file. Check the column names: id, adr.'])
         df['norm_adr'] = AICore.preprocess(df.adr)
+        # бесплатный сервер не расчитан на такое, считаем локально
+        # classifier = NagibatorClassifier(clf_path, ppb.DistilBertModel, ppb.DistilBertTokenizer,
+        #                                  'distilbert-base-multilingual-cased')
+        # df['is_fixed'] = classifier.predict(df['norm_adr'].values)
+
         df = df[['id', 'adr', 'norm_adr']]
         df.to_csv('result{}{}.csv'.format(filename, date), sep=';')
     except Exception as e:
